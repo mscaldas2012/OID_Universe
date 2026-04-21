@@ -207,6 +207,14 @@ async def update_node(
 
     node = await _get_node_or_404(session, oid_path, "admin")
 
+    if node.node_type == NodeType.federated:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"detail": f"Write blocked: node {oid_path} is federated.",
+                    "federation_url": node.federation_url or "",
+                    "federation_label": node.federation_label},
+        )
+
     old_snapshot: dict[str, Any] = {
         "status": node.status,
         "visibility": node.visibility,
@@ -271,6 +279,14 @@ async def delete_node(
     actor = request.state.actor
 
     node = await _get_node_or_404(session, oid_path, "admin")
+
+    if node.node_type == NodeType.federated:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"detail": f"Write blocked: node {oid_path} is federated.",
+                    "federation_url": node.federation_url or "",
+                    "federation_label": node.federation_label},
+        )
 
     # Count immediate children
     child_q = select(func.count()).select_from(OidNode).where(
