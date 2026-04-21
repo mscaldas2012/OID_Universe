@@ -1,8 +1,7 @@
 """Shared test fixtures.
 
-Uses testcontainers to spin up a real PostgreSQL 16 instance per test session,
-runs all Alembic migrations, then provides an AsyncSession and an HTTPX
-AsyncClient wired to the FastAPI app.
+When TEST_DATABASE_URL is set (e.g. inside Docker Compose), uses that database
+directly. Otherwise spins up a throwaway PostgreSQL 16 via testcontainers.
 """
 
 import os
@@ -12,22 +11,32 @@ import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from testcontainers.postgres import PostgresContainer
 
 TEST_ADMIN_KEY = "test-admin-key-insecure"
 TEST_ROOT_OID = "2.16.840.1.113762"
 
+# ── Database URL resolution ────────────────────────────────────────────────────
+# Inside Docker Compose, set TEST_DATABASE_URL to skip testcontainers.
+
+def _use_testcontainers() -> bool:
+    return not os.environ.get("TEST_DATABASE_URL")
+
 
 @pytest.fixture(scope="session")
 def postgres_container():
-    with PostgresContainer("postgres:16") as pg:
-        yield pg
+    if _use_testcontainers():
+        from testcontainers.postgres import PostgresContainer
+        with PostgresContainer("postgres:16") as pg:
+            yield pg
+    else:
+        yield None
 
 
 @pytest.fixture(scope="session")
-def database_url(postgres_container: PostgresContainer) -> str:
+def database_url(postgres_container) -> str:
+    if not _use_testcontainers():
+        return os.environ["TEST_DATABASE_URL"]
     url = postgres_container.get_connection_url()
-    # Replace psycopg2 driver with asyncpg for SQLAlchemy async
     return url.replace("psycopg2", "asyncpg").replace("postgresql://", "postgresql+asyncpg://")
 
 
