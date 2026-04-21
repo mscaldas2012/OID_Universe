@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OID Registry Manager — 2.16.840.1.113762</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+/* ── RESET ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body, #root { height: 100%; }
+
+/* ── TOKENS ── */
+:root {
+  --bg:            oklch(0.12  0.012 240);
+  --bg-panel:      oklch(0.155 0.012 240);
+  --bg-surface:    oklch(0.185 0.01  240);
+  --bg-hover:      oklch(0.22  0.01  240);
+  --bg-active:     oklch(0.22  0.025 var(--accent-hue));
+  --border:        oklch(0.26  0.01  240);
+  --border-strong: oklch(0.36  0.01  240);
+  --text:          oklch(0.91  0.008 240);
+  --text-dim:      oklch(0.58  0.008 240);
+  --text-muted:    oklch(0.38  0.006 240);
+
+  --accent-hue:    160;
+  --accent:        oklch(0.72  0.16  var(--accent-hue));
+  --accent-dim:    oklch(0.50  0.09  var(--accent-hue));
+  --accent-bg:     oklch(0.20  0.04  var(--accent-hue));
+
+  --c-active:      oklch(0.72  0.16  140);
+  --c-deprecated:  oklch(0.80  0.15   70);
+  --c-disabled:    oklch(0.42  0.01  240);
+  --c-public:      oklch(0.70  0.13  220);
+  --c-private:     oklch(0.70  0.13  300);
+
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --font-ui:   'Inter', system-ui, sans-serif;
+  --r:    4px;
+  --r-lg: 8px;
+}
+
+/* ── BASE ── */
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── SCROLLBARS ── */
+::-webkit-scrollbar              { width: 5px; height: 5px; }
+::-webkit-scrollbar-track        { background: transparent; }
+::-webkit-scrollbar-thumb        { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover  { background: var(--border-strong); }
+
+/* ── MISC ── */
+a { color: var(--accent); }
+button { font-family: var(--font-ui); }
+input, textarea, select { font-family: var(--font-ui); }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- Data & utilities (plain JS, no Babel needed) -->
+<script src="oid-data.js"></script>
+
+<!-- React components (Babel JSX) -->
+<script type="text/babel" src="oid-ui.jsx"></script>
+<script type="text/babel" src="oid-tree.jsx"></script>
+<script type="text/babel" src="oid-detail.jsx"></script>
+<script type="text/babel" src="oid-modals.jsx"></script>
+<script type="text/babel" src="oid-app.jsx"></script>
+</body>
+</html>

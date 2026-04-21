@@ -27,8 +27,7 @@ CREATE TABLE oid_nodes (
     id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     oid_path         LTREE NOT NULL UNIQUE,
     node_type        node_type NOT NULL,
-    label            TEXT NOT NULL,
-    description      TEXT,
+    description      TEXT NOT NULL,
     visibility       TEXT NOT NULL CHECK (visibility IN ('public', 'private')),
     metadata         JSONB,
     -- populated only when node_type = 'federated'
@@ -46,8 +45,7 @@ CREATE INDEX oid_gist_idx  ON oid_nodes USING GIST (oid_path);
 CREATE INDEX oid_btree_idx ON oid_nodes USING BTREE (oid_path);
 CREATE INDEX oid_type_idx  ON oid_nodes (node_type);
 CREATE INDEX oid_fts_idx   ON oid_nodes
-    USING GIN (to_tsvector('english',
-        coalesce(label,'') || ' ' || coalesce(description,'')));
+    USING GIN (to_tsvector('english', description));
 
 CREATE TABLE audit_log (
     id          BIGSERIAL PRIMARY KEY,
@@ -105,11 +103,11 @@ ORDER BY nlevel(oid_path);
 GET  /oid/{oid_path}            → node detail; federated nodes return pointer metadata
 GET  /oid/{oid_path}/children   → immediate children (managed + federated)
 GET  /oid/{oid_path}/ancestors  → full ancestor chain including upward federation nodes
-GET  /search?q=                 → full-text search over label + description
+GET  /search?q=                 → full-text search over description
 
 -- Write (admin only; rejected for federated nodes or their descendants)
 POST   /oid                     → create managed node (explicit visibility required)
-PUT    /oid/{oid_path}          → update label/description/metadata/visibility
+PUT    /oid/{oid_path}          → update description/metadata/visibility
 DELETE /oid/{oid_path}          → delete node + all managed descendants
 POST   /oid/{oid_path}/delegate → convert managed node to federated (delegation)
 POST   /oid/{oid_path}/reclaim  → convert federated node back to managed
