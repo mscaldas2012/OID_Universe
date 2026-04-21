@@ -4,7 +4,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import func, select, text
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import settings
@@ -167,16 +167,15 @@ async def create_node(
     session.add(node)
     try:
         await session.flush()
-    except IntegrityError as exc:
+    except (IntegrityError, DBAPIError) as exc:
         await session.rollback()
         msg = str(exc.orig)
-        if "P0002" in msg or "federated" in msg.lower():
-            # Extract federation_url from error message if possible
+        if "federated" in msg.lower():
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail={"detail": msg, "federation_url": "", "federation_label": None},
             ) from exc
-        if "oid_path_unique" in msg or "unique" in msg.lower():
+        if "unique" in msg.lower():
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"OID path '{body.oid_path}' already exists",
