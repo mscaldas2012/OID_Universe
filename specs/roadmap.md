@@ -183,4 +183,42 @@ services:
 
 ---
 
-*Version 1.0 — April 2026.*
+---
+
+## Backlog — Federation Coordination (two-sided handshake)
+
+**Context**: The current `/delegate` and `/reclaim` implementation is intentionally local-only. Delegating a node marks it as federated and blocks writes on this instance, but does nothing to the target registry. The two sides must be coordinated manually by operators today.
+
+**What needs to be solved before federation is production-ready:**
+
+### BL-001 — Delegation handshake
+Before committing a delegation, `POST /oid/{path}/delegate` should call `federation_url` to verify the target instance is reachable and willing to accept the subtree. If the handshake fails, the delegation should be rejected.
+
+Proposed handshake: `POST {federation_url}/oid/accept-delegation` with the subtree root OID and this instance's URL. Target responds 200 to confirm or 409 to decline.
+
+### BL-002 — Subtree provisioning on the delegatee
+When a subtree is delegated, the receiving instance needs to have those nodes. Define whether:
+- The delegator pushes a snapshot of the subtree to the delegatee at delegation time, or
+- The delegatee pulls from the delegator on first access, or
+- Operators pre-provision the delegatee manually (current implicit assumption)
+
+### BL-003 — Read-through vs. local cache on federated nodes
+Currently `GET /oid/{path}` on a federated node returns the local (possibly stale) copy. Decide whether:
+- The delegator should proxy/redirect reads to `federation_url`, or
+- Serve the local copy with a `federation_url` header so clients can follow up themselves, or
+- Add a `?live=true` query param that fetches from the federated instance on demand
+
+### BL-004 — Reclaim notification
+When an operator calls `/reclaim`, the previously-delegated instance is not notified. It may continue accepting writes to a subtree the delegator has taken back. Need a `DELETE {federation_url}/oid/accept-delegation/{path}` callback (or equivalent) so the delegatee can lock out writes on its end.
+
+### BL-005 — Federation registry / trust model
+Multiple instances delegating to each other creates a graph of trust. Define:
+- How an instance proves it is the authoritative delegator for a given OID arc
+- Whether federation relationships are public (visible in ancestor chains) or private
+- How to detect and break circular delegations
+
+**Suggested phase**: tackle BL-001 + BL-002 as part of Phase 3 (Management Layer / Local Node sync protocol). BL-003 can be addressed earlier as a read-path improvement. BL-004 and BL-005 are Phase 3 concerns.
+
+---
+
+*Version 1.1 — April 2026.*
