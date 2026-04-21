@@ -64,7 +64,7 @@ async def _get_node_or_404(
     caller_type: str,
 ) -> OidNode:
     q = select(OidNode).where(
-        text("oid_path = :path::ltree")
+        text("oid_path = CAST(:path AS ltree)")
     ).params(path=oid_path)
     q = _visibility_filter(q, caller_type)
     result = await session.execute(q)
@@ -85,7 +85,7 @@ async def get_children(
     caller_type = get_caller_type(request)
     # Immediate children: lquery 'parent.*{1}'
     lquery = f"{oid_path}.*{{1}}"
-    q = select(OidNode).where(text("oid_path ~ :lq::lquery")).params(lq=lquery)
+    q = select(OidNode).where(text("oid_path ~ CAST(:lq AS lquery)")).params(lq=lquery)
     q = _visibility_filter(q, caller_type)
     result = await session.execute(q)
     children = [_to_response(n) for n in result.scalars().all()]
@@ -101,7 +101,7 @@ async def get_ancestors(
     caller_type = get_caller_type(request)
     q = (
         select(OidNode)
-        .where(text("oid_path @> :path::ltree AND oid_path != :path::ltree"))
+        .where(text("oid_path @> CAST(:path AS ltree) AND oid_path != CAST(:path AS ltree)"))
         .params(path=oid_path)
         .order_by(func.nlevel(text("oid_path")))
     )
@@ -133,11 +133,11 @@ async def create_node(
     require_admin(request)
     actor = request.state.actor
 
-    # Validate parent exists (unless this IS the root or an ancestor-context node)
+    # Validate parent exists (unless this IS the configured root or has no parent)
     parent_path = ".".join(body.oid_path.split(".")[:-1])
-    if parent_path:
+    if parent_path and body.oid_path != settings.root_oid:
         parent_q = select(OidNode).where(
-            text("oid_path = :path::ltree")
+            text("oid_path = CAST(:path AS ltree)")
         ).params(path=parent_path)
         parent = (await session.execute(parent_q)).scalar_one_or_none()
         if parent is None:
@@ -274,7 +274,7 @@ async def delete_node(
 
     # Count immediate children
     child_q = select(func.count()).select_from(OidNode).where(
-        text("oid_path ~ :lq::lquery")
+        text("oid_path ~ CAST(:lq AS lquery)")
     ).params(lq=f"{oid_path}.*{{1}}")
     child_count = (await session.execute(child_q)).scalar_one()
 

@@ -7,6 +7,16 @@ from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.sql import func
+from sqlalchemy.types import UserDefinedType
+
+
+class LtreeType(UserDefinedType):
+    """PostgreSQL ltree — render_bind_cast=True makes asyncpg emit CAST(:v AS ltree)."""
+    cache_ok = True
+    render_bind_cast = True
+
+    def get_col_spec(self, **kw: object) -> str:
+        return "ltree"
 
 
 class Base(DeclarativeBase):
@@ -42,8 +52,7 @@ class OidNode(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid()
     )
-    # oid_path stored as TEXT cast to LTREE at the DB layer
-    oid_path: Mapped[str] = mapped_column(Text, nullable=False)
+    oid_path: Mapped[str] = mapped_column(LtreeType, nullable=False)
     node_type: Mapped[str] = mapped_column(
         SAEnum(NodeType, name="node_type", create_type=False), nullable=False
     )

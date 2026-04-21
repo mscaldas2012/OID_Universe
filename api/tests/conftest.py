@@ -32,17 +32,13 @@ def database_url(postgres_container: PostgresContainer) -> str:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def run_migrations(postgres_container: PostgresContainer, database_url: str) -> None:
-    sync_url = postgres_container.get_connection_url()
-    env = {
-        **os.environ,
-        "DATABASE_URL": database_url,
-        "ROOT_OID": TEST_ROOT_OID,
-        "ADMIN_API_KEY": TEST_ADMIN_KEY,
-    }
+def run_migrations(database_url: str) -> None:
+    # Alembic env.py uses create_async_engine, so pass the asyncpg URL directly.
+    # psycopg2 is not installed — only asyncpg is.
     subprocess.run(
         ["alembic", "-c", "alembic.ini", "upgrade", "head"],
-        env={**env, "DATABASE_URL": sync_url.replace("postgresql://", "postgresql+psycopg2://")},
+        env={**os.environ, "DATABASE_URL": database_url,
+             "ROOT_OID": TEST_ROOT_OID, "ADMIN_API_KEY": TEST_ADMIN_KEY},
         cwd=str(os.path.dirname(os.path.dirname(__file__))),
         check=True,
     )
@@ -65,7 +61,7 @@ async def session(session_factory) -> AsyncSession:
         await s.rollback()
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture(scope="session")
 async def client(database_url: str) -> AsyncClient:
     os.environ["DATABASE_URL"] = database_url
     os.environ["ROOT_OID"] = TEST_ROOT_OID
@@ -83,3 +79,19 @@ async def client(database_url: str) -> AsyncClient:
 @pytest.fixture
 def admin_headers() -> dict[str, str]:
     return {"X-Admin-Key": TEST_ADMIN_KEY}
+
+
+@pytest_asyncio.fixture(scope="session", autouse=True)
+async def seed_root_node(client: AsyncClient) -> None:
+    """Ensure the root OID node exists before any tests run."""
+    r = await client.post(
+        "/oid",
+        json={
+            "oid_path": TEST_ROOT_OID,
+            "description": "Root OID for testing",
+            "visibility": "public",
+        },
+        headers={"X-Admin-Key": TEST_ADMIN_KEY},
+    )
+    # 201 = created, 409 = already exists — both are fine
+    assert r.status_code in (201, 409), f"Failed to seed root node: {r.text}"
