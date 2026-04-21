@@ -20,6 +20,12 @@
       "key": "root_oid",
       "value": "2.16.840.1.113762",
       "type": "string"
+    },
+    {
+      "key": "bearer_token",
+      "value": "",
+      "type": "string",
+      "description": "Paste the token value returned by POST /auth/token here"
     }
   ],
   "item": [
@@ -281,6 +287,124 @@
               "path": ["oid", "{{root_oid}}.1.4", "reclaim"]
             },
             "description": "Convert a federated node back to managed. No request body needed."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth — Token Management",
+      "item": [
+        {
+          "name": "Issue Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var data = pm.response.json();",
+                  "if (data.token) { pm.collectionVariables.set('bearer_token', data.token); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-Admin-Key", "value": "{{admin_api_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"my-api-token\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/token",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "token"]
+            },
+            "description": "Issue a new Bearer token. The test script auto-saves the token to the `bearer_token` collection variable."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "originalRequest": { "method": "POST", "url": { "raw": "{{base_url}}/auth/token" } },
+              "body": "{\n  \"id\": 1,\n  \"token\": \"<32-byte-hex>\",\n  \"label\": \"my-api-token\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Revoke Token",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "X-Admin-Key", "value": "{{admin_api_key}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/token/1",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "token", "1"]
+            },
+            "description": "Revoke a token by its numeric ID. Returns 204 on success, 404 if not found."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Search",
+      "item": [
+        {
+          "name": "Search (anonymous — public only)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/search?q=value+set&limit=50&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["search"],
+              "query": [
+                { "key": "q", "value": "value set", "description": "Search terms" },
+                { "key": "status", "value": "", "disabled": true, "description": "active | deprecated | disabled" },
+                { "key": "visibility", "value": "", "disabled": true, "description": "public | private (ignored for anonymous)" },
+                { "key": "limit", "value": "50", "description": "Max results (max 200)" },
+                { "key": "offset", "value": "0" }
+              ]
+            },
+            "description": "Full-text search over node descriptions. Anonymous callers only see public nodes."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "originalRequest": { "method": "GET", "url": { "raw": "{{base_url}}/search?q=value+set" } },
+              "body": "{\n  \"q\": \"value set\",\n  \"total\": 1,\n  \"results\": []\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Search (credentialed — public + private)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{bearer_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/search?q=value+set&limit=50&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["search"],
+              "query": [
+                { "key": "q", "value": "value set" },
+                { "key": "limit", "value": "50" },
+                { "key": "offset", "value": "0" }
+              ]
+            },
+            "description": "Search with a Bearer token — also returns private nodes. Run 'Issue Token' first to populate {{bearer_token}}."
           }
         }
       ]

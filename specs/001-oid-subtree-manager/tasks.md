@@ -101,18 +101,18 @@ No unit-test scaffolding unless individual tasks call it out — tests run again
 
 ### Bearer token issuance
 
-- [ ] T027b [US2] `ApiToken` SQLAlchemy async model in `api/src/models/api_token.py`: columns `id BIGSERIAL PK`, `token_hash TEXT UNIQUE NOT NULL`, `label TEXT NOT NULL`, `created_at TIMESTAMPTZ`, `revoked_at TIMESTAMPTZ NULL`; add Alembic migration `api/src/db/migrations/versions/004_api_tokens.py`
-- [ ] T028 [US2] `POST /auth/token` in `api/src/routers/auth.py`: admin-only; generate 32-byte hex token; hash and store via `ApiToken` model; return `{"id": ..., "token": "...", "label": "..."}`
-- [ ] T029 [US2] Bearer token validation in `api/src/middleware/auth.py`: on `Authorization: Bearer <token>`, hash and look up in `api_tokens`; reject revoked tokens; set `caller_type = "credentialed"`
-- [ ] T029b [US2] `DELETE /auth/token/{token_id}` in `api/src/routers/auth.py`: admin-only; set `revoked_at = now()` on the matching `api_tokens` row; return 204; return 404 if not found. Update `POST /auth/token` to return `id` alongside `token` and `label`.
+- [x] T027b [US2] `ApiToken` SQLAlchemy async model in `api/src/models/api_token.py`: columns `id BIGSERIAL PK`, `token_hash TEXT UNIQUE NOT NULL`, `label TEXT NOT NULL`, `created_at TIMESTAMPTZ`, `revoked_at TIMESTAMPTZ NULL`; add Alembic migration `api/src/db/migrations/versions/004_api_tokens.py`
+- [x] T028 [US2] `POST /auth/token` in `api/src/routers/auth.py`: admin-only; generate 32-byte hex token; hash and store via `ApiToken` model; return `{"id": ..., "token": "...", "label": "..."}`
+- [x] T029 [US2] Bearer token validation in `api/src/middleware/auth.py`: on `Authorization: Bearer <token>`, hash and look up in `api_tokens`; reject revoked tokens; set `caller_type = "credentialed"`
+- [x] T029b [US2] `DELETE /auth/token/{token_id}` in `api/src/routers/auth.py`: admin-only; set `revoked_at = now()` on the matching `api_tokens` row; return 204; return 404 if not found. Update `POST /auth/token` to return `id` alongside `token` and `label`.
 
 ### Search
 
-- [ ] T030 [US2] `GET /search` in `api/src/routers/search.py`: `to_tsquery` full-text search over `description` FTS index; filter by `status` and `visibility` query params; apply caller-type visibility filter; `limit`/`offset` pagination; return `{"q", "total", "results"}`
+- [x] T030 [US2] `GET /search` in `api/src/routers/search.py`: `to_tsquery` full-text search over `description` FTS index; filter by `status` and `visibility` query params; apply caller-type visibility filter; `limit`/`offset` pagination; return `{"q", "total", "results"}`
 
 ### Integration tests
 
-- [ ] T031 [US2] Integration tests `api/tests/integration/test_visibility.py`: verify public/private filtering at GET/children/ancestors/search for anonymous, credentialed, admin callers; verify cascade on visibility update is enforced
+- [x] T031 [US2] Integration tests `api/tests/integration/test_visibility.py`: verify public/private filtering at GET/children/ancestors/search for anonymous, credentialed, admin callers; verify cascade on visibility update is enforced
 
 **Checkpoint**: Anonymous → public only. Bearer token → private visible. Search respects visibility. Token revocation works.
 
