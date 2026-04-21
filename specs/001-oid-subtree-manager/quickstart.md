@@ -49,8 +49,9 @@ This brings up three services:
 - `api` — FastAPI on `http://localhost:8000`
 - `web` — Next.js 14 on `http://localhost:3000`
 
-On first startup, Alembic migrations run automatically and the schema is
-created. The health check endpoint confirms readiness:
+On first startup, Alembic migrations run automatically, the schema is
+created, and the root OID node (`ROOT_OID`) is seeded automatically if it
+does not already exist. The health check endpoint confirms readiness:
 
 ```bash
 curl http://localhost:8000/health
