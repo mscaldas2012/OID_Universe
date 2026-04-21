@@ -11,10 +11,11 @@ WORKDIR /app
 
 # Install dependencies before copying source (layer cache)
 COPY pyproject.toml ./
-RUN pip install --no-cache-dir -e .
+RUN pip install --no-cache-dir -e ".[dev]"
 
 # Copy application source
 COPY src/ ./src/
+COPY tests/ ./tests/
 COPY alembic.ini ./
 
 # Switch to non-root
