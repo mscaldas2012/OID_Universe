@@ -5,6 +5,12 @@ Change: Replaced directional "federation pointer" concept with a unified
 downward delegation (arcs within subtree handed off to child instances).
 Data model updated: single oid_nodes table with node_type field replaces
 the separate federation_pointers table.
+
+Version change: 1.1.0 → 1.2.0 (MINOR)
+Change: Removed separate `label` field from node data model. `description`
+is now the single required human-readable text field (was optional). Rationale:
+the UI prototype uses only `description`; a separate `label` field was redundant
+and inconsistent with the frontend design.
 -->
 
 # OID Universe Constitution
@@ -120,8 +126,7 @@ Every node MUST capture:
 - **OID** (string, unique): the full dotted-integer identifier
 - **node_type** (enum: `managed` | `federated`): whether this instance owns
   the node or it belongs to another instance
-- **Label** (string): human-readable short name
-- **Description** (string, optional): extended free-text
+- **Description** (string, required): human-readable name and purpose of the node
 - **Visibility** (enum: `public` | `private`): access tier for this node's
   pointer/metadata as surfaced by this instance
 - **Metadata** (key-value, optional): extensible, administrator-defined fields;
@@ -172,4 +177,4 @@ Constitution Check that verifies no principle is violated. Complexity
 introduced in violation of Principle VI (Simplicity) MUST be explicitly
 justified in the plan's Complexity Tracking section.
 
-**Version**: 1.1.0 | **Ratified**: 2026-04-20 | **Last Amended**: 2026-04-20
+**Version**: 1.2.0 | **Ratified**: 2026-04-20 | **Last Amended**: 2026-04-20
