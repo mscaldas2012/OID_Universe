@@ -41,9 +41,7 @@ def database_url(postgres_container) -> str:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def run_migrations(database_url: str) -> None:
-    # Alembic env.py uses create_async_engine, so pass the asyncpg URL directly.
-    # psycopg2 is not installed — only asyncpg is.
+def run_migrations_and_truncate(database_url: str) -> None:
     subprocess.run(
         ["alembic", "-c", "alembic.ini", "upgrade", "head"],
         env={**os.environ, "DATABASE_URL": database_url,
@@ -51,6 +49,18 @@ def run_migrations(database_url: str) -> None:
         cwd=str(os.path.dirname(os.path.dirname(__file__))),
         check=True,
     )
+    # Wipe all data so repeated runs on a shared DB start clean.
+    import asyncio
+    from sqlalchemy.ext.asyncio import create_async_engine
+    from sqlalchemy import text
+
+    async def _truncate() -> None:
+        engine = create_async_engine(database_url)
+        async with engine.begin() as conn:
+            await conn.execute(text("TRUNCATE audit_log, oid_nodes RESTART IDENTITY CASCADE"))
+        await engine.dispose()
+
+    asyncio.get_event_loop().run_until_complete(_truncate())
 
 
 @pytest.fixture(scope="session")
