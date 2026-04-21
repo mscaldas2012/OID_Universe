@@ -1,0 +1,336 @@
+{
+  "info": {
+    "name": "OID Universe API",
+    "_postman_id": "oid-universe-api-v1",
+    "description": "Postman collection for the OID Universe API — hierarchical OID node management with federation support.\n\nRoot OID: 2.16.840.1.113762\n\nBefore creating any child nodes, run the requests in the **Bootstrap** folder in order to seed the root and intermediate ancestor nodes.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "admin_api_key",
+      "value": "changeme",
+      "type": "string"
+    },
+    {
+      "key": "root_oid",
+      "value": "2.16.840.1.113762",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Returns service health status and the configured root OID."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "originalRequest": {
+                "method": "GET",
+                "url": { "raw": "{{base_url}}/health" }
+              },
+              "body": "{\n  \"status\": \"ok\",\n  \"root_oid\": \"{{root_oid}}\"\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Bootstrap (run in order)",
+      "description": "Seeds the root OID and a sample subtree. Run these in order before using the rest of the collection. The root node (2.16.840.1.113762) can be created without a parent because it equals ROOT_OID.",
+      "item": [
+        {
+          "name": "1. Create root node",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-Admin-Key", "value": "{{admin_api_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"oid_path\": \"{{root_oid}}\",\n  \"description\": \"HL7 OID root — Health Level Seven International\",\n  \"visibility\": \"public\",\n  \"status\": \"active\",\n  \"refs\": [\"https://www.hl7.org\"],\n  \"metadata\": null\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/oid",
+              "host": ["{{base_url}}"],
+              "path": ["oid"]
+            },
+            "description": "Creates the root node (equal to ROOT_OID = {{root_oid}}) — no parent required."
+          }
+        },
+        {
+          "name": "2. Create child node",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-Admin-Key", "value": "{{admin_api_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"oid_path\": \"{{root_oid}}.1\",\n  \"description\": \"HL7 Published OIDs\",\n  \"visibility\": \"public\",\n  \"status\": \"active\",\n  \"refs\": [],\n  \"metadata\": null\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/oid",
+              "host": ["{{base_url}}"],
+              "path": ["oid"]
+            },
+            "description": "Creates {{root_oid}}.1 — parent ({{root_oid}}) must exist first."
+          }
+        },
+        {
+          "name": "3. Create grandchild node",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-Admin-Key", "value": "{{admin_api_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"oid_path\": \"{{root_oid}}.1.4\",\n  \"description\": \"HL7 Value Sets\",\n  \"visibility\": \"public\",\n  \"status\": \"active\",\n  \"refs\": [],\n  \"metadata\": null\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/oid",
+              "host": ["{{base_url}}"],
+              "path": ["oid"]
+            },
+            "description": "Creates {{root_oid}}.1.4 — parent ({{root_oid}}.1) must exist first."
+          }
+        }
+      ]
+    },
+    {
+      "name": "OID Nodes — Read",
+      "item": [
+        {
+          "name": "Get Node",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/oid/{{root_oid}}.1.4",
+              "host": ["{{base_url}}"],
+              "path": ["oid", "{{root_oid}}.1.4"]
+            },
+            "description": "Retrieve a single OID node by its path. Anonymous callers only see public nodes."
+          }
+        },
+        {
+          "name": "Get Node (as admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Admin-Key", "value": "{{admin_api_key}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/oid/{{root_oid}}.1.4",
+              "host": ["{{base_url}}"],
+              "path": ["oid", "{{root_oid}}.1.4"]
+            },
+            "description": "Retrieve a node with admin credentials — also returns private nodes."
+          }
+        },
+        {
+          "name": "Get Children",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/oid/{{root_oid}}.1/children",
+              "host": ["{{base_url}}"],
+              "path": ["oid", "{{root_oid}}.1", "children"]
+            },
+            "description": "List the immediate children of an OID node."
+          }
+        },
+        {
+          "name": "Get Ancestors",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/oid/{{root_oid}}.1.4/ancestors",
+              "host": ["{{base_url}}"],
+              "path": ["oid", "{{root_oid}}.1.4", "ancestors"]
+            },
+            "description": "List all ancestor nodes from root down to (but not including) the given node."
+          }
+        }
+      ]
+    },
+    {
+      "name": "OID Nodes — Write",
+      "item": [
+        {
+          "name": "Create Node",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-Admin-Key", "value": "{{admin_api_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"oid_path\": \"{{root_oid}}.1.4.1\",\n  \"description\": \"New child node\",\n  \"visibility\": \"public\",\n  \"status\": \"active\",\n  \"refs\": [],\n  \"metadata\": null\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/oid",
+              "host": ["{{base_url}}"],
+              "path": ["oid"]
+            },
+            "description": "Create a new OID node. Parent node must already exist. Returns 201 on success."
+          }
+        },
+        {
+          "name": "Update Node",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "X-Admin-Key", "value": "{{admin_api_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated description\",\n  \"visibility\": \"private\",\n  \"status\": \"active\",\n  \"refs\": [\"https://example.com/ref\"],\n  \"metadata\": {\"key\": \"value\"}\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/oid/{{root_oid}}.1.4.1",
+              "host": ["{{base_url}}"],
+              "path": ["oid", "{{root_oid}}.1.4.1"]
+            },
+            "description": "Update an existing node. All fields are optional (partial update)."
+          }
+        },
+        {
+          "name": "Delete Node",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "X-Admin-Key", "value": "{{admin_api_key}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/oid/{{root_oid}}.1.4.1",
+              "host": ["{{base_url}}"],
+              "path": ["oid", "{{root_oid}}.1.4.1"]
+            },
+            "description": "Delete a node. Node must have no children. Returns 204 No Content."
+          }
+        }
+      ]
+    },
+    {
+      "name": "OID Nodes — Federation",
+      "item": [
+        {
+          "name": "Delegate Node",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-Admin-Key", "value": "{{admin_api_key}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"federation_url\": \"https://oid.example.org/api\",\n  \"federation_label\": \"Example Org Registry\",\n  \"delegation_contact\": \"admin@example.org\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/oid/{{root_oid}}.1.4/delegate",
+              "host": ["{{base_url}}"],
+              "path": ["oid", "{{root_oid}}.1.4", "delegate"]
+            },
+            "description": "Convert a managed node to federated. Descendants are cascade-disabled."
+          }
+        },
+        {
+          "name": "Reclaim Node",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-Admin-Key", "value": "{{admin_api_key}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/oid/{{root_oid}}.1.4/reclaim",
+              "host": ["{{base_url}}"],
+              "path": ["oid", "{{root_oid}}.1.4", "reclaim"]
+            },
+            "description": "Convert a federated node back to managed. No request body needed."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Audit",
+      "item": [
+        {
+          "name": "List Audit Log",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Admin-Key", "value": "{{admin_api_key}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/audit?limit=50&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["audit"],
+              "query": [
+                { "key": "oid_path", "value": "", "disabled": true, "description": "Filter by OID path" },
+                { "key": "action", "value": "", "disabled": true, "description": "Filter by action: CREATE, UPDATE, DELETE, DELEGATE, RECLAIM" },
+                { "key": "limit", "value": "50", "description": "Max records (max 500)" },
+                { "key": "offset", "value": "0", "description": "Pagination offset" }
+              ]
+            },
+            "description": "List all audit log entries with optional filtering."
+          }
+        },
+        {
+          "name": "List Audit Log (filtered by OID path)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Admin-Key", "value": "{{admin_api_key}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/audit?oid_path={{root_oid}}.1.4&limit=50&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["audit"],
+              "query": [
+                { "key": "oid_path", "value": "{{root_oid}}.1.4", "description": "Filter by OID path" },
+                { "key": "action", "value": "", "disabled": true },
+                { "key": "limit", "value": "50" },
+                { "key": "offset", "value": "0" }
+              ]
+            },
+            "description": "Retrieve audit entries for a specific OID path."
+          }
+        }
+      ]
+    }
+  ]
+}

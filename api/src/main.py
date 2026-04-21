@@ -4,6 +4,8 @@ from typing import AsyncGenerator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import select, text
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 
 from src.config import settings
 from src.middleware.auth import AuthMiddleware
@@ -17,10 +19,41 @@ def _run_migrations() -> None:
     )
 
 
+async def _seed_root_node() -> None:
+    """Insert the root OID node if it doesn't already exist."""
+    from src.models.oid_node import NodeType, OidNode
+
+    engine = create_async_engine(settings.database_url)
+    async with AsyncSession(engine) as session:
+        existing = (
+            await session.execute(
+                select(OidNode).where(text("oid_path = CAST(:p AS ltree)")).params(p=settings.root_oid)
+            )
+        ).scalar_one_or_none()
+
+        if existing is None:
+            await session.execute(
+                text("SELECT set_config('app.root_oid', :v, true)"), {"v": settings.root_oid}
+            )
+            await session.execute(
+                text("SELECT set_config('app.actor', :v, true)"), {"v": "system"}
+            )
+            session.add(
+                OidNode(
+                    oid_path=settings.root_oid,
+                    node_type=NodeType.managed,
+                    status="active",
+                    description=f"Root OID node ({settings.root_oid})",
+                    visibility="public",
+                )
+            )
+            await session.commit()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    # Run Alembic migrations at startup (single-instance — no race condition)
     _run_migrations()
+    await _seed_root_node()
     yield
 
 
