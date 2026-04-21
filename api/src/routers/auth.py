@@ -56,5 +56,5 @@ async def revoke_token(
     if record is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Token not found")
     from datetime import datetime, timezone
-    record.revoked_at = datetime.now(timezone.utc)
+    record.revoked_at = datetime.now(timezone.utc).replace(tzinfo=None)
     await session.commit()

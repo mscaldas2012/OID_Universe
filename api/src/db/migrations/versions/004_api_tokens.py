@@ -20,8 +20,8 @@ def upgrade() -> None:
         sa.Column("id", sa.BigInteger, primary_key=True, autoincrement=True),
         sa.Column("token_hash", sa.Text, nullable=False, unique=True),
         sa.Column("label", sa.Text, nullable=False),
-        sa.Column("created_at", sa.TIMESTAMP(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("revoked_at", sa.TIMESTAMP(timezone=True), nullable=True),
+        sa.Column("created_at", sa.TIMESTAMP(timezone=False), server_default=sa.func.now(), nullable=False),
+        sa.Column("revoked_at", sa.TIMESTAMP(timezone=False), nullable=True),
     )
     op.create_index("api_tokens_hash_idx", "api_tokens", ["token_hash"])
 
