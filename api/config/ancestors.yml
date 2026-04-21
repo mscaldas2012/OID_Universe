@@ -1,0 +1,26 @@
+# Ancestor context arcs above ROOT_OID.
+# These are inserted as federated nodes so the ancestor chain is complete.
+# All fields are optional except oid_path. Omit federation_url if unknown.
+#
+# Run with: docker compose exec api python -m scripts.seed_ancestors
+
+ancestors:
+  - oid_path: "2"
+    description: "ISO Member Bodies"
+    federation_label: "ISO"
+    federation_url: "https://www.iso.org"
+
+  - oid_path: "2.16"
+    description: "Country codes (ISO 3166)"
+    federation_label: "ISO 3166"
+    federation_url: "https://www.iso.org/iso-3166-country-codes.html"
+
+  - oid_path: "2.16.840"
+    description: "United States of America"
+    federation_label: "US National Body"
+    federation_url: "https://www.ansi.org"
+
+  - oid_path: "2.16.840.1"
+    description: "Organizations in the United States"
+    federation_label: "US Organizations"
+    federation_url: ""

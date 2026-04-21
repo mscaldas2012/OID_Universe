@@ -126,21 +126,21 @@ No unit-test scaffolding unless individual tasks call it out — tests run again
 
 ### Delegate / Reclaim endpoints
 
-- [ ] T032 [US3] `POST /oid/{oid_path}/delegate` in `api/src/routers/oid.py`: validate body (`DelegateRequest`); update `node_type → federated`, set `federation_url/label/contact`; trigger cascades `node_type` to all descendants (handled in PL/pgSQL trigger from T008); audit `DELEGATE` per node (trigger handles cascade audit entries); return updated `OidNodeResponse`
-- [ ] T033 [US3] `POST /oid/{oid_path}/reclaim` in `api/src/routers/oid.py`: set `node_type → managed`, clear federation fields on that node only (descendants unchanged); audit `RECLAIM`; return updated `OidNodeResponse`
+- [x] T032 [US3] `POST /oid/{oid_path}/delegate` in `api/src/routers/oid.py`: validate body (`DelegateRequest`); update `node_type → federated`, set `federation_url/label/contact`; trigger cascades `node_type` to all descendants (handled in PL/pgSQL trigger from T008); audit `DELEGATE` per node (trigger handles cascade audit entries); return updated `OidNodeResponse`
+- [x] T033 [US3] `POST /oid/{oid_path}/reclaim` in `api/src/routers/oid.py`: set `node_type → managed`, clear federation fields on that node only (descendants unchanged); audit `RECLAIM`; return updated `OidNodeResponse`
 
 ### Audit endpoint
 
-- [ ] T034 [P] [US3] `GET /audit` in `api/src/routers/audit.py`: admin-only; filter by `oid_path` and `action` query params; `limit`/`offset`; return `AuditLogEntry` list with total count
+- [x] T034 [P] [US3] `GET /audit` in `api/src/routers/audit.py`: admin-only; filter by `oid_path` and `action` query params; `limit`/`offset`; return `AuditLogEntry` list with total count
 
 ### Seed script
 
-- [ ] T035 [P] [US3] Ancestor seed script `api/scripts/seed_ancestors.py`: read `api/config/ancestors.yml` (list of `{oid_path, federation_label, federation_url}`); insert as federated nodes if not already present; idempotent; run with `docker compose exec api python -m scripts.seed_ancestors`
-- [ ] T036 [P] [US3] `api/config/ancestors.yml` with well-known OID arcs: `2` (ISO), `2.16` (Country), `2.16.840` (USA), `2.16.840.1` (Organizations) with appropriate labels
+- [x] T035 [P] [US3] Ancestor seed script `api/scripts/seed_ancestors.py`: read `api/config/ancestors.yml` (list of `{oid_path, federation_label, federation_url}`); insert as federated nodes if not already present; idempotent; run with `docker compose exec api python -m scripts.seed_ancestors`
+- [x] T036 [P] [US3] `api/config/ancestors.yml` with well-known OID arcs: `2` (ISO), `2.16` (Country), `2.16.840` (USA), `2.16.840.1` (Organizations) with appropriate labels
 
 ### Integration tests
 
-- [ ] T037 [US3] Integration tests `api/tests/integration/test_federation.py`: delegate node → verify descendants return 409 on write → verify ancestor chain includes federation nodes → reclaim → verify writes succeed; verify audit log DELEGATE cascade entries
+- [x] T037 [US3] Integration tests `api/tests/integration/test_federation.py`: delegate node → verify descendants return 409 on write → verify ancestor chain includes federation nodes → reclaim → verify writes succeed; verify audit log DELEGATE cascade entries
 
 **Checkpoint**: Delegate/reclaim work; cascade to descendants enforced by trigger; ancestor chain complete including upward arcs; audit entries correct.
 
