@@ -3,7 +3,7 @@ from typing import Literal
 
 from fastapi import HTTPException, Request, status
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.responses import Response
 
@@ -21,22 +21,19 @@ def _hash_token(token: str) -> str:
 
 
 async def _validate_bearer(token: str) -> bool:
+    from src.db import AsyncSessionLocal
     from src.models.api_token import ApiToken
 
-    engine = create_async_engine(settings.database_url)
-    try:
-        async with AsyncSession(engine) as session:
-            row = (
-                await session.execute(
-                    select(ApiToken).where(
-                        ApiToken.token_hash == _hash_token(token),
-                        ApiToken.revoked_at.is_(None),
-                    )
+    async with AsyncSessionLocal() as session:
+        row = (
+            await session.execute(
+                select(ApiToken).where(
+                    ApiToken.token_hash == _hash_token(token),
+                    ApiToken.revoked_at.is_(None),
                 )
-            ).scalar_one_or_none()
-            return row is not None
-    finally:
-        await engine.dispose()
+            )
+        ).scalar_one_or_none()
+        return row is not None
 
 
 class AuthMiddleware(BaseHTTPMiddleware):
