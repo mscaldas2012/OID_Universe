@@ -154,46 +154,46 @@ No unit-test scaffolding unless individual tasks call it out — tests run again
 
 ### Design system + shared UI
 
-- [ ] T038 [US4] OKLCH dark theme CSS variables in `web/app/globals.css`: `--accent-hue` (default 160), `--bg`, `--bg-panel`, `--bg-surface`, `--bg-hover`, `--bg-active`, `--border`, `--border-strong`, `--text`, `--text-dim`, `--text-muted`, `--accent`, `--accent-dim`, `--c-active`, `--c-deprecated`, `--c-disabled`, `--c-public`, `--c-private`, `--font-mono`, `--font-ui`, `--r`, `--r-lg`
-- [ ] T039 [P] [US4] Icon components (inline SVG) in `web/components/ui/icons.tsx`: `IconChevron`, `IconPlus`, `IconEdit`, `IconTrash`, `IconClock`, `IconGlobe`, `IconLock`, `IconDelegate`, `IconBan`, `IconX`, `IconCheck`, `IconSearch` (port from `specs/design/oid-ui.jsx`)
-- [ ] T040 [P] [US4] Primitive components in `web/components/ui/primitives.tsx`: `Btn` (variants: default/primary/ghost/danger/warn; sizes: xs/sm/md/lg), `Input`, `Textarea`, `OIDSelect`, `Toggle`, `FieldLabel`, `Divider`, `EmptyState` (port from `specs/design/oid-ui.jsx`)
-- [ ] T041 [P] [US4] Status and visibility components in `web/components/ui/badges.tsx`: `StatusDot` (active=green glow, deprecated=amber, disabled=gray 45% opacity), `VisBadge` (public=globe+blue, private=lock+purple), `Toast` (bottom-center, 2.2 s auto-dismiss)
+- [x] T038 [US4] OKLCH dark theme CSS variables in `web/app/globals.css`: `--accent-hue` (default 160), `--bg`, `--bg-panel`, `--bg-surface`, `--bg-hover`, `--bg-active`, `--border`, `--border-strong`, `--text`, `--text-dim`, `--text-muted`, `--accent`, `--accent-dim`, `--c-active`, `--c-deprecated`, `--c-disabled`, `--c-public`, `--c-private`, `--font-mono`, `--font-ui`, `--r`, `--r-lg`
+- [x] T039 [P] [US4] Icon components (inline SVG) in `web/components/ui/icons.tsx`: `IconChevron`, `IconPlus`, `IconEdit`, `IconTrash`, `IconClock`, `IconGlobe`, `IconLock`, `IconDelegate`, `IconBan`, `IconX`, `IconCheck`, `IconSearch` (port from `specs/design/oid-ui.jsx`)
+- [x] T040 [P] [US4] Primitive components in `web/components/ui/primitives.tsx`: `Btn` (variants: default/primary/ghost/danger/warn; sizes: xs/sm/md/lg), `Input`, `Textarea`, `OIDSelect`, `Toggle`, `FieldLabel`, `Divider`, `EmptyState` (port from `specs/design/oid-ui.jsx`)
+- [x] T041 [P] [US4] Status and visibility components in `web/components/ui/badges.tsx`: `StatusDot` (active=green glow, deprecated=amber, disabled=gray 45% opacity), `VisBadge` (public=globe+blue, private=lock+purple), `Toast` (bottom-center, 2.2 s auto-dismiss)
 
 ### Auth + app shell
 
-- [ ] T042 [US4] NextAuth v5 credentials provider in `web/auth.ts`: validate `password` field against `ADMIN_API_KEY` env var; session includes `role: "admin"`; `NEXTAUTH_SECRET` required
-- [ ] T043 [US4] Admin shell layout `web/app/admin/layout.tsx`: require session (redirect to `/admin/login` if unauthenticated); render header (OID logo, root OID badge, Audit Log button with count, Add Root Child button, layout toggle); `localStorage` persistence for selected node ID and layout preference
+- [x] T042 [US4] NextAuth v5 credentials provider in `web/auth.ts`: validate `password` field against `ADMIN_API_KEY` env var; session includes `role: "admin"`; `NEXTAUTH_SECRET` required
+- [x] T043 [US4] Admin shell layout `web/app/admin/layout.tsx`: require session (redirect to `/admin/login` if unauthenticated); render header (OID logo, root OID badge, Audit Log button with count, Add Root Child button, layout toggle); `localStorage` persistence for selected node ID and layout preference
 
 ### Tree components (Explorer layout)
 
-- [ ] T044 [US4] `TreeNode` component `web/components/tree/TreeNode.tsx`: indent 16 px/depth, chevron for expandable nodes, status dot, arc label in mono, description in dim text, private lock icon, delegation icon, active/hover background states (port from `specs/design/oid-tree.jsx`)
-- [ ] T045 [US4] `TreePanel` component `web/components/tree/TreePanel.tsx`: 290 px sidebar, inline search (filter + auto-expand on search), expand/collapse per node, status legend, stats footer (total · active · private); wires to API `GET /oid/{path}/children` (port from `specs/design/oid-tree.jsx`)
+- [x] T044 [US4] `TreeNode` component `web/components/tree/TreeNode.tsx`: indent 16 px/depth, chevron for expandable nodes, status dot, arc label in mono, description in dim text, private lock icon, delegation icon, active/hover background states (port from `specs/design/oid-tree.jsx`)
+- [x] T045 [US4] `TreePanel` component `web/components/tree/TreePanel.tsx`: 290 px sidebar, inline search (filter + auto-expand on search), expand/collapse per node, status legend, stats footer (total · active · private); wires to API `GET /oid/{path}/children` (port from `specs/design/oid-tree.jsx`)
 
 ### Registry components (Registry layout)
 
-- [ ] T046 [US4] `RegistryRow` + `RegistryPanel` components in `web/components/tree/RegistryPanel.tsx`: full-width table with columns OID/Description/Status/Visibility/Delegation/Modified; sticky header; status + visibility filter dropdowns; search input; row depth indentation; port from `specs/design/oid-tree.jsx`
+- [x] T046 [US4] `RegistryRow` + `RegistryPanel` components in `web/components/tree/RegistryPanel.tsx`: full-width table with columns OID/Description/Status/Visibility/Delegation/Modified; sticky header; status + visibility filter dropdowns; search input; row depth indentation; port from `specs/design/oid-tree.jsx`
 
 ### Node detail + audit
 
-- [ ] T047 [US4] `Breadcrumb` component `web/components/detail/Breadcrumb.tsx`: renders ancestor arc chain from `GET /oid/{path}/ancestors`; last arc in accent color
-- [ ] T048 [US4] `NodeDetail` component `web/components/detail/NodeDetail.tsx`: OID heading (22 px mono), breadcrumb, description, status + visibility badges; action bar (Add Child, Edit, Delegate/Remove Delegation, Disable/Re-enable with confirmation, Delete blocked if has children); details grid (Status, Visibility, Created, Modified, Children count, Delegation org+contact, References, Child Nodes list); empty state when no node selected; port from `specs/design/oid-detail.jsx`
-- [ ] T049 [P] [US4] `AuditLog` drawer `web/components/detail/AuditLog.tsx`: 320 px slide-in from right; action badges color-coded per audit action vocabulary; clickable node ID navigates to node; actor + timestamp; port from `specs/design/oid-detail.jsx`
+- [x] T047 [US4] `Breadcrumb` component `web/components/detail/Breadcrumb.tsx`: renders ancestor arc chain from `GET /oid/{path}/ancestors`; last arc in accent color
+- [x] T048 [US4] `NodeDetail` component `web/components/detail/NodeDetail.tsx`: OID heading (22 px mono), breadcrumb, description, status + visibility badges; action bar (Add Child, Edit, Delegate/Remove Delegation, Disable/Re-enable with confirmation, Delete blocked if has children); details grid (Status, Visibility, Created, Modified, Children count, Delegation org+contact, References, Child Nodes list); empty state when no node selected; port from `specs/design/oid-detail.jsx`
+- [x] T049 [P] [US4] `AuditLog` drawer `web/components/detail/AuditLog.tsx`: 320 px slide-in from right; action badges color-coded per audit action vocabulary; clickable node ID navigates to node; actor + timestamp; port from `specs/design/oid-detail.jsx`
 
 ### Modals
 
-- [ ] T050 [US4] `NodeModal` `web/components/modals/NodeModal.tsx`: add mode (arc preview `parent.arc`, auto-suggested next arc from `nextArc()`, required arc integer validation, description, status select, visibility select, refs textarea one-URL-per-line); edit mode (OID fixed, pre-populated); calls `POST /oid` or `PUT /oid/{path}`; port from `specs/design/oid-modals.jsx`
-- [ ] T051 [P] [US4] `DelegateModal` `web/components/modals/DelegateModal.tsx`: consequence description, org name input, contact email input; calls `POST /oid/{path}/delegate`; pre-populates on re-open; port from `specs/design/oid-modals.jsx`
-- [ ] T052 [P] [US4] `ConfirmModal` `web/components/modals/ConfirmModal.tsx`: reusable; `warn` variant for disable (warns about children inheriting disabled parent), `danger` variant for delete; port from `specs/design/oid-modals.jsx`
+- [x] T050 [US4] `NodeModal` `web/components/modals/NodeModal.tsx`: add mode (arc preview `parent.arc`, auto-suggested next arc from `nextArc()`, required arc integer validation, description, status select, visibility select, refs textarea one-URL-per-line); edit mode (OID fixed, pre-populated); calls `POST /oid` or `PUT /oid/{path}`; port from `specs/design/oid-modals.jsx`
+- [x] T051 [P] [US4] `DelegateModal` `web/components/modals/DelegateModal.tsx`: consequence description, org name input, contact email input; calls `POST /oid/{path}/delegate`; pre-populates on re-open; port from `specs/design/oid-modals.jsx`
+- [x] T052 [P] [US4] `ConfirmModal` `web/components/modals/ConfirmModal.tsx`: reusable; `warn` variant for disable (warns about children inheriting disabled parent), `danger` variant for delete; port from `specs/design/oid-modals.jsx`
 
 ### Public pages
 
-- [ ] T053 [US4] API client `web/lib/api.ts`: typed fetch wrappers for all `GET /oid/*` and `GET /search` endpoints; visibility-aware (pass Bearer token from session if present)
-- [ ] T054 [US4] Public OID page `web/app/oid/[...path]/page.tsx`: SSR; fetch node + children + ancestors; render breadcrumb, OID heading, description, status + visibility badges, children list (status dots + visibility badges), references; federated nodes show "managed by [federation_label]" badge linking to `federation_url`; private nodes without auth → 404
-- [ ] T055 [P] [US4] JSON-LD `DefinedTerm` structured data in `web/app/oid/[...path]/page.tsx`: inject `<script type="application/ld+json">` with `@type: DefinedTerm`, `name`, `description`, `url` for public managed nodes only
+- [x] T053 [US4] API client `web/lib/api.ts`: typed fetch wrappers for all `GET /oid/*` and `GET /search` endpoints; visibility-aware (pass Bearer token from session if present)
+- [x] T054 [US4] Public OID page `web/app/oid/[...path]/page.tsx`: SSR; fetch node + children + ancestors; render breadcrumb, OID heading, description, status + visibility badges, children list (status dots + visibility badges), references; federated nodes show "managed by [federation_label]" badge linking to `federation_url`; private nodes without auth → 404
+- [x] T055 [P] [US4] JSON-LD `DefinedTerm` structured data in `web/app/oid/[...path]/page.tsx`: inject `<script type="application/ld+json">` with `@type: DefinedTerm`, `name`, `description`, `url` for public managed nodes only
 
 ### Admin page wiring
 
-- [ ] T056 [US4] Admin OID manager page `web/app/admin/page.tsx`: fetches full tree from API; renders header with layout toggle; Explorer layout (TreePanel + NodeDetail) or Registry layout (RegistryPanel + optional NodeDetail side panel 360 px); wires all action handlers to modals and API calls; audit log toggle; `localStorage` for selected node
+- [x] T056 [US4] Admin OID manager page `web/app/admin/page.tsx`: fetches full tree from API; renders header with layout toggle; Explorer layout (TreePanel + NodeDetail) or Registry layout (RegistryPanel + optional NodeDetail side panel 360 px); wires all action handlers to modals and API calls; audit log toggle; `localStorage` for selected node
 
 **Checkpoint**: Full UI flows work: public browse, admin login, Explorer + Registry layouts, all modals, audit drawer, Toast notifications, federated node badges.
 
