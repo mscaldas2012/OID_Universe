@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback, useEffect, useRef } from "react"
-import { signOut } from "next-auth/react"
+import { signOut, useSession } from "next-auth/react"
 import { TreePanel } from "@/components/tree/TreePanel"
 import { RegistryPanel } from "@/components/tree/RegistryPanel"
 import { NodeDetail } from "@/components/detail/NodeDetail"
@@ -14,7 +14,6 @@ import { IconPlus, IconClock, IconSearch } from "@/components/ui/icons"
 import { getNode, getChildren, getAuditLog, type OidNode } from "@/lib/api"
 
 const ROOT_OID = process.env.NEXT_PUBLIC_ROOT_OID ?? "2.16.840.1.113762"
-const ADMIN_KEY = process.env.NEXT_PUBLIC_ADMIN_KEY ?? ""
 const LS_SELECTED = "oid:selectedPath"
 const LS_LAYOUT = "oid:layout"
 
@@ -31,6 +30,9 @@ function useToast() {
 }
 
 export default function AdminPage() {
+  const { data: session } = useSession()
+  const ADMIN_KEY = (session?.user as { adminKey?: string })?.adminKey ?? ""
+
   const [selectedPath, setSelectedPath] = useState<string | null>(() => {
     if (typeof window !== "undefined") return localStorage.getItem(LS_SELECTED)
     return null

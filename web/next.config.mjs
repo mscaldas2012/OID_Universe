@@ -6,7 +6,6 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000",
     NEXT_PUBLIC_ROOT_OID: process.env.ROOT_OID ?? "2.16.840.1.113762",
-    NEXT_PUBLIC_ADMIN_KEY: process.env.ADMIN_API_KEY ?? "",
   },
   typescript: {
     ignoreBuildErrors: true,
