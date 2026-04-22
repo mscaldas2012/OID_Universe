@@ -181,7 +181,7 @@ export default function AdminPage() {
             </span>
           )}
         </Btn>
-        <Btn variant="ghost" size="sm" onClick={() => signOut({ callbackUrl: "/admin/login" })}>
+        <Btn variant="ghost" size="sm" onClick={() => signOut({ callbackUrl: "/login" })}>
           Sign out
         </Btn>
       </header>
