@@ -1,6 +1,9 @@
+import hashlib
 from typing import Literal
 
 from fastapi import HTTPException, Request, status
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.responses import Response
 
@@ -11,6 +14,26 @@ CallerType = Literal["admin", "credentialed", "anonymous"]
 
 def get_caller_type(request: Request) -> CallerType:
     return request.state.caller_type  # type: ignore[no-any-return]
+
+
+def _hash_token(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
+async def _validate_bearer(token: str) -> bool:
+    from src.db import AsyncSessionLocal
+    from src.models.api_token import ApiToken
+
+    async with AsyncSessionLocal() as session:
+        row = (
+            await session.execute(
+                select(ApiToken).where(
+                    ApiToken.token_hash == _hash_token(token),
+                    ApiToken.revoked_at.is_(None),
+                )
+            )
+        ).scalar_one_or_none()
+        return row is not None
 
 
 class AuthMiddleware(BaseHTTPMiddleware):
@@ -28,12 +51,13 @@ class AuthMiddleware(BaseHTTPMiddleware):
             request.state.caller_type = "admin"
             request.state.actor = "admin"
         elif bearer.startswith("Bearer "):
-            # Full Bearer validation is wired in Phase 4 (T029).
-            # This stub marks the caller as anonymous until ApiToken lookup is added.
             token = bearer.removeprefix("Bearer ").strip()
-            request.state.pending_bearer = token
-            request.state.caller_type = "anonymous"
-            request.state.actor = "anonymous"
+            if await _validate_bearer(token):
+                request.state.caller_type = "credentialed"
+                request.state.actor = "credentialed"
+            else:
+                request.state.caller_type = "anonymous"
+                request.state.actor = "anonymous"
         else:
             request.state.caller_type = "anonymous"
             request.state.actor = "anonymous"

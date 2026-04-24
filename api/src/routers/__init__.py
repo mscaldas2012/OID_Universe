@@ -1,3 +1,3 @@
-from src.routers import audit, oid
+from src.routers import audit, auth, oid, search
 
-__all__ = ["oid", "audit"]
+__all__ = ["oid", "audit", "auth", "search"]

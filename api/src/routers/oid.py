@@ -4,7 +4,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import func, select, text
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import settings
@@ -167,16 +167,15 @@ async def create_node(
     session.add(node)
     try:
         await session.flush()
-    except IntegrityError as exc:
+    except (IntegrityError, DBAPIError) as exc:
         await session.rollback()
         msg = str(exc.orig)
-        if "P0002" in msg or "federated" in msg.lower():
-            # Extract federation_url from error message if possible
+        if "federated" in msg.lower():
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail={"detail": msg, "federation_url": "", "federation_label": None},
             ) from exc
-        if "oid_path_unique" in msg or "unique" in msg.lower():
+        if "unique" in msg.lower():
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"OID path '{body.oid_path}' already exists",
@@ -206,6 +205,14 @@ async def update_node(
     actor = request.state.actor
 
     node = await _get_node_or_404(session, oid_path, "admin")
+
+    if node.node_type == NodeType.federated:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"detail": f"Write blocked: node {oid_path} is federated.",
+                    "federation_url": node.federation_url or "",
+                    "federation_label": node.federation_label},
+        )
 
     old_snapshot: dict[str, Any] = {
         "status": node.status,
@@ -271,6 +278,14 @@ async def delete_node(
     actor = request.state.actor
 
     node = await _get_node_or_404(session, oid_path, "admin")
+
+    if node.node_type == NodeType.federated:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"detail": f"Write blocked: node {oid_path} is federated.",
+                    "federation_url": node.federation_url or "",
+                    "federation_label": node.federation_label},
+        )
 
     # Count immediate children
     child_q = select(func.count()).select_from(OidNode).where(

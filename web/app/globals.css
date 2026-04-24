@@ -4,19 +4,67 @@
 
 :root {
   /* OID Universe design system — OKLCH dark palette */
-  --accent-hue: 220;
+  --accent-hue: 160;
+
+  /* Backgrounds */
   --bg: oklch(12% 0.01 var(--accent-hue));
-  --surface: oklch(17% 0.012 var(--accent-hue));
+  --bg-panel: oklch(15% 0.012 var(--accent-hue));
+  --bg-surface: oklch(18% 0.013 var(--accent-hue));
+  --bg-hover: oklch(22% 0.014 var(--accent-hue));
+  --bg-active: oklch(25% 0.016 var(--accent-hue));
+
+  /* Borders */
   --border: oklch(28% 0.015 var(--accent-hue));
+  --border-strong: oklch(38% 0.02 var(--accent-hue));
+
+  /* Text */
   --text: oklch(90% 0.01 var(--accent-hue));
-  --text-dim: oklch(55% 0.01 var(--accent-hue));
+  --text-dim: oklch(60% 0.01 var(--accent-hue));
+  --text-muted: oklch(42% 0.01 var(--accent-hue));
+
+  /* Accent */
   --accent: oklch(65% 0.18 var(--accent-hue));
-  --font-sans: "Inter", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+  --accent-dim: oklch(45% 0.12 var(--accent-hue));
+
+  /* Status colors */
+  --c-active: oklch(65% 0.2 145);
+  --c-deprecated: oklch(72% 0.18 75);
+  --c-disabled: oklch(45% 0.01 var(--accent-hue));
+
+  /* Visibility colors */
+  --c-public: oklch(62% 0.18 220);
+  --c-private: oklch(62% 0.18 300);
+
+  /* Typography */
+  --font-ui: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+
+  /* Radii */
+  --r: 6px;
+  --r-lg: 10px;
 }
 
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-sans);
+  font-family: var(--font-ui);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
 }

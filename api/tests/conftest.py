@@ -60,7 +60,11 @@ def run_migrations_and_truncate(database_url: str) -> None:
             await conn.execute(text("TRUNCATE audit_log, oid_nodes RESTART IDENTITY CASCADE"))
         await engine.dispose()
 
-    asyncio.get_event_loop().run_until_complete(_truncate())
+    loop = asyncio.new_event_loop()
+    try:
+        loop.run_until_complete(_truncate())
+    finally:
+        loop.close()
 
 
 @pytest.fixture(scope="session")

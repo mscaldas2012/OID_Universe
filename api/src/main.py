@@ -73,10 +73,12 @@ app.add_middleware(
 )
 
 # Routers are imported here after models are loaded; avoids circular imports
-from src.routers import oid, audit  # noqa: E402
+from src.routers import oid, audit, auth, search  # noqa: E402
 
 app.include_router(oid.router)
 app.include_router(audit.router)
+app.include_router(auth.router)
+app.include_router(search.router)
 
 
 @app.get("/health")

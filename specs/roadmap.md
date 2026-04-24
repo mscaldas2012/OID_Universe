@@ -183,4 +183,72 @@ services:
 
 ---
 
-*Version 1.0 — April 2026.*
+---
+
+---
+
+## Backlog — Federation Coordination (two-sided handshake)
+
+**Context**: The current `/delegate` and `/reclaim` implementation is intentionally local-only. Delegating a node marks it as federated and blocks writes on this instance, but does nothing to the target registry. The two sides must be coordinated manually by operators today.
+
+### Two bootstrap scenarios
+
+**Scenario A — Standalone instance**
+An operator creates an instance with a deep root OID (e.g. `2.16.840.1.113762`) without any knowledge of a parent registry. All nodes are managed, nothing points anywhere. This is a fully self-contained registry.
+
+Later, the operator may discover a parent instance that owns `2.16.840.1`. Two paths forward:
+- The **local admin** can initiate an outbound delegation request: "I want to register my root under your tree." The parent instance reviews and approves, then marks `2.16.840.1.113762` as federated pointing to this instance.
+- The **parent instance admin** can discover this instance and initiate the delegation on their end. This instance receives an inbound delegation request and approves or rejects it.
+
+Either way, nothing changes automatically. Both sides must explicitly agree.
+
+**Scenario B — Delegated instance**
+An instance is created knowing it was delegated from a parent. Its `ROOT_OID` (`2.16.840.1.113762`) already exists as a federated node on the parent instance pointing here. This instance's upward ancestor context (e.g. `2`, `2.16`, `2.16.840`, `2.16.840.1`) should be seeded as federated nodes pointing back to the parent — this is what the ancestor seed script (`seed_ancestors.py`) is for. Ancestor chain traversal across instances works by following `federation_url` links upward.
+
+---
+
+### Backlog items
+
+### BL-001 — Async delegation request flow (no immediate side effects)
+Delegation must never be a single atomic operation. It is a **request** that the receiving instance's admin must approve or reject. Proposed states:
+
+```
+PENDING_OUTBOUND  — this instance sent a delegation request to a remote
+PENDING_INBOUND   — this instance received a delegation request from a remote
+ACTIVE            — both sides agreed; node is federated
+REJECTED          — remote declined; node stays managed
+REVOKED           — previously active, now reclaimed by one side
+```
+
+Neither instance changes its node state until both sides confirm. The local admin approves/rejects via an admin action; the remote instance does the same.
+
+### BL-002 — Subtree snapshot on delegation
+When a node is delegated to another instance, that instance needs to know about any existing children. Two options:
+
+- **Push**: delegator sends a snapshot of the subtree to the delegatee as part of the handshake. Delegatee can accept or reject individual nodes.
+- **Pull**: delegatee fetches the subtree from `federation_url` on demand.
+
+**Risk if delegatee rejects children**: the delegator's existing nodes become orphaned — they exist locally but writes are blocked, and the delegatee doesn't have them. This can break downstream consumers. The safest behaviour: children offered to a delegatee that are not explicitly accepted remain on the delegator as **deprecated** (not deleted, not writable), with a pointer to the federated node. Operators on both sides must resolve the conflict explicitly.
+
+### BL-003 — Read-through on federated nodes
+Currently `GET /oid/{path}` on a federated node returns the local (possibly stale) copy. Options:
+- Return local copy with a `X-Federation-URL` response header pointing to the live source.
+- Add `?live=true` to proxy the read to `federation_url` on demand.
+- Always redirect (308) to `federation_url` for federated nodes.
+
+Recommended: return local copy by default (fast, works offline), add `X-Federation-URL` header, and support `?live=true` for authoritative reads.
+
+### BL-004 — Reclaim notification and lockout
+When an operator calls `/reclaim`, the previously-delegated instance must be notified. Until it acknowledges, the delegated instance should enter a **lockout-pending** state — writes still blocked on the delegator, but the delegatee is warned that authority is being revoked. The delegatee has a grace window to reject the reclaim or export its data.
+
+### BL-005 — Federation graph and cycle detection
+Multiple instances delegating to each other form a directed graph. Requirements:
+- An instance must not be able to create a cycle (A delegates to B which delegates back to A).
+- Federation relationships should be visible in ancestor chains so callers can traverse the full path across instances.
+- Each instance should expose a `GET /federation/peers` endpoint listing known delegator/delegatee relationships.
+
+**Suggested delivery order**: BL-001 (request flow + states) is the foundation — nothing else is safe without it. BL-002 (snapshot) and BL-003 (read-through) can follow independently. BL-004 and BL-005 are Phase 3 concerns aligned with the Local Node sync protocol.
+
+---
+
+*Version 1.1 — April 2026.*
