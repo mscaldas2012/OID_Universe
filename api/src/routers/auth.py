@@ -29,7 +29,20 @@ def _hash_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 
-@router.post("/token", response_model=TokenCreateResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/token",
+    response_model=TokenCreateResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Issue a new Bearer API token",
+    description=(
+        "Creates a new 32-byte hex Bearer token and stores its SHA-256 hash in the database. "
+        "The raw token is returned only once in the response; it cannot be retrieved again. "
+        "Requires admin authentication via the X-Admin-Key header."
+    ),
+    responses={
+        401: {"description": "Missing or invalid X-Admin-Key header"},
+    },
+)
 async def create_token(
     body: TokenCreateRequest,
     request: Request,
@@ -44,7 +57,20 @@ async def create_token(
     return TokenCreateResponse(id=record.id, token=raw, label=record.label)
 
 
-@router.delete("/token/{token_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/token/{token_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Revoke an API token",
+    description=(
+        "Sets `revoked_at` on the token identified by `token_id`, permanently disabling it for authentication. "
+        "Requires admin authentication via the X-Admin-Key header."
+    ),
+    responses={
+        204: {"description": "Token revoked successfully"},
+        401: {"description": "Missing or invalid X-Admin-Key header"},
+        404: {"description": "Token not found"},
+    },
+)
 async def revoke_token(
     token_id: int,
     request: Request,
