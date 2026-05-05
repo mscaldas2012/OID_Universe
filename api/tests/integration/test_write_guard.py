@@ -469,9 +469,10 @@ async def test_reclaim_clears_only_root_node(
         "grandchild should still be federated after reclaim of parent"
     )
 
-    # Cleanup: reclaim descendants so we can delete them
-    await client.post(f"/oid/{grandchild}/reclaim", headers=admin_headers)
+    # Cleanup: reclaim top-down (parent → child → grandchild) because the trigger
+    # blocks reclaiming a node whose ancestor is still federated.
     await client.post(f"/oid/{child}/reclaim", headers=admin_headers)
+    await client.post(f"/oid/{grandchild}/reclaim", headers=admin_headers)
     await _delete(client, admin_headers, grandchild)
     await _delete(client, admin_headers, child)
     await _delete(client, admin_headers, parent)

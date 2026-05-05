@@ -235,6 +235,14 @@ async def create_node(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"OID path '{body.oid_path}' already exists",
             ) from exc
+        # Any other write-guard trigger violation (e.g. rule 3: public under private
+        # ancestor) also maps to 409.  All trigger messages begin with "Write rejected"
+        # or "Write blocked".
+        if "write rejected" in msg.lower() or "write blocked" in msg.lower():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=msg,
+            ) from exc
         raise
 
     await log_action(
