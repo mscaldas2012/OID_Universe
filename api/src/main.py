@@ -4,11 +4,17 @@ from typing import AsyncGenerator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.requests import Request
+from fastapi.responses import JSONResponse
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 
 from src.config import settings
 from src.middleware.auth import AuthMiddleware
+from src.middleware.rate_limit import limiter
 
 
 def _run_migrations() -> None:
@@ -63,6 +69,9 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(AuthMiddleware)
 app.add_middleware(
     CORSMiddleware,
@@ -81,6 +90,11 @@ app.include_router(auth.router)
 app.include_router(search.router)
 
 
-@app.get("/health")
+@app.get(
+    "/health",
+    summary="Health check",
+    description="Returns the service status and configured root OID. No authentication required.",
+    tags=["health"],
+)
 async def health() -> dict[str, str]:
     return {"status": "ok", "root_oid": settings.root_oid}

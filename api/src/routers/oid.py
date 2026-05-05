@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.config import settings
 from src.db import get_session
 from src.middleware.auth import get_caller_type, require_admin
+from src.middleware.rate_limit import PUBLIC_RATE_LIMIT, limiter
 from src.models.oid_node import NodeType, OidNode
 from src.schemas.oid_node import (
     AncestorsResponse,
@@ -76,7 +77,20 @@ async def _get_node_or_404(
 
 # ── Read endpoints ─────────────────────────────────────────────────────────────
 
-@router.get("/{oid_path:path}/children", response_model=ChildrenResponse)
+@limiter.limit(PUBLIC_RATE_LIMIT)
+@router.get(
+    "/{oid_path:path}/children",
+    response_model=ChildrenResponse,
+    summary="List immediate children of an OID node",
+    description=(
+        "Returns the direct children (depth 1) of the node at `oid_path` using an ltree lquery. "
+        "No auth required for public nodes; anonymous callers see only public children. "
+        "Credentialed (Bearer token) and admin (X-Admin-Key) callers see all visibility levels."
+    ),
+    responses={
+        404: {"description": "Parent node not found or not visible to caller"},
+    },
+)
 async def get_children(
     oid_path: str,
     request: Request,
@@ -92,7 +106,20 @@ async def get_children(
     return ChildrenResponse(oid_path=oid_path, children=children)
 
 
-@router.get("/{oid_path:path}/ancestors", response_model=AncestorsResponse)
+@limiter.limit(PUBLIC_RATE_LIMIT)
+@router.get(
+    "/{oid_path:path}/ancestors",
+    response_model=AncestorsResponse,
+    summary="Get all ancestors of an OID node",
+    description=(
+        "Returns the full upward chain of ancestor nodes for `oid_path`, ordered from root to direct parent. "
+        "Includes federated arc nodes that sit above the local root. "
+        "Visibility filtering applies: anonymous callers only see public ancestors."
+    ),
+    responses={
+        404: {"description": "Node not found or not visible to caller"},
+    },
+)
 async def get_ancestors(
     oid_path: str,
     request: Request,
@@ -111,7 +138,20 @@ async def get_ancestors(
     return AncestorsResponse(oid_path=oid_path, ancestors=ancestors)
 
 
-@router.get("/{oid_path:path}", response_model=OidNodeResponse)
+@limiter.limit(PUBLIC_RATE_LIMIT)
+@router.get(
+    "/{oid_path:path}",
+    response_model=OidNodeResponse,
+    summary="Fetch a single OID node",
+    description=(
+        "Returns the OID node at `oid_path`. "
+        "Anonymous callers (no auth) can only retrieve public nodes. "
+        "Credentialed callers (Authorization: Bearer <token>) and admins (X-Admin-Key) see nodes of any visibility."
+    ),
+    responses={
+        404: {"description": "Node not found or not visible to caller"},
+    },
+)
 async def get_node(
     oid_path: str,
     request: Request,
@@ -124,7 +164,22 @@ async def get_node(
 
 # ── Write endpoints (admin only) ───────────────────────────────────────────────
 
-@router.post("", status_code=status.HTTP_201_CREATED, response_model=OidNodeResponse)
+@router.post(
+    "",
+    status_code=status.HTTP_201_CREATED,
+    response_model=OidNodeResponse,
+    summary="Create a new OID node",
+    description=(
+        "Creates a managed OID node at the path specified in the request body. "
+        "Requires admin authentication via the X-Admin-Key header. "
+        "Returns 409 if the OID path already exists or if a federated ancestor blocks the write."
+    ),
+    responses={
+        400: {"description": "Parent node does not exist"},
+        401: {"description": "Missing or invalid X-Admin-Key header"},
+        409: {"description": "OID path already exists, or a federated ancestor blocks this write"},
+    },
+)
 async def create_node(
     body: OidNodeCreate,
     request: Request,
@@ -194,7 +249,21 @@ async def create_node(
     return _to_response(node)
 
 
-@router.put("/{oid_path:path}", response_model=OidNodeResponse)
+@router.put(
+    "/{oid_path:path}",
+    response_model=OidNodeResponse,
+    summary="Partially update an OID node",
+    description=(
+        "Applies a partial update to the node at `oid_path`; only fields present in the request body are changed. "
+        "Requires admin authentication via the X-Admin-Key header. "
+        "Returns 409 if the node is federated, as writes to federated nodes are blocked."
+    ),
+    responses={
+        401: {"description": "Missing or invalid X-Admin-Key header"},
+        404: {"description": "Node not found"},
+        409: {"description": "Node is federated; writes are blocked"},
+    },
+)
 async def update_node(
     oid_path: str,
     body: OidNodeUpdate,
@@ -268,7 +337,22 @@ async def update_node(
     return _to_response(node)
 
 
-@router.delete("/{oid_path:path}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{oid_path:path}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete an OID node",
+    description=(
+        "Permanently deletes the node at `oid_path`. "
+        "Requires admin authentication via the X-Admin-Key header. "
+        "Returns 409 if the node has children (delete children first) or if the node is federated."
+    ),
+    responses={
+        204: {"description": "Node deleted successfully"},
+        401: {"description": "Missing or invalid X-Admin-Key header"},
+        404: {"description": "Node not found"},
+        409: {"description": "Node has children and cannot be deleted, or node is federated"},
+    },
+)
 async def delete_node(
     oid_path: str,
     request: Request,
@@ -313,7 +397,20 @@ async def delete_node(
 
 # ── Federation endpoints ───────────────────────────────────────────────────────
 
-@router.post("/{oid_path:path}/delegate", response_model=OidNodeResponse)
+@router.post(
+    "/{oid_path:path}/delegate",
+    response_model=OidNodeResponse,
+    summary="Delegate an OID subtree to an external registry",
+    description=(
+        "Marks the node at `oid_path` as federated and sets its federation URL, label, and contact. "
+        "A database trigger cascades the federated status to all descendant nodes. "
+        "Requires admin authentication via the X-Admin-Key header."
+    ),
+    responses={
+        401: {"description": "Missing or invalid X-Admin-Key header"},
+        404: {"description": "Node not found"},
+    },
+)
 async def delegate_node(
     oid_path: str,
     body: DelegateRequest,
@@ -352,7 +449,20 @@ async def delegate_node(
     return _to_response(node)
 
 
-@router.post("/{oid_path:path}/reclaim", response_model=OidNodeResponse)
+@router.post(
+    "/{oid_path:path}/reclaim",
+    response_model=OidNodeResponse,
+    summary="Reclaim a delegated OID node",
+    description=(
+        "Clears federation metadata on the node at `oid_path`, reverting it to managed status. "
+        "Only the targeted node is changed; descendant federation state is not automatically cleared. "
+        "Requires admin authentication via the X-Admin-Key header."
+    ),
+    responses={
+        401: {"description": "Missing or invalid X-Admin-Key header"},
+        404: {"description": "Node not found"},
+    },
+)
 async def reclaim_node(
     oid_path: str,
     request: Request,

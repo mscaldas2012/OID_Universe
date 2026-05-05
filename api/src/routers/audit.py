@@ -10,7 +10,21 @@ from src.schemas.oid_node import AuditResponse
 router = APIRouter(prefix="/audit", tags=["audit"])
 
 
-@router.get("", response_model=AuditResponse)
+@router.get(
+    "",
+    response_model=AuditResponse,
+    summary="List audit log entries",
+    description=(
+        "Returns a paginated, reverse-chronological list of audit log entries. "
+        "Requires admin authentication via the X-Admin-Key header. "
+        "Filter by `oid_path` to see history for a specific node, or by `action` "
+        "(CREATE, UPDATE, DISABLE, DELETE, DELEGATE, RECLAIM, VISIBILITY) to narrow by event type. "
+        "Max 500 entries per page."
+    ),
+    responses={
+        401: {"description": "Missing or invalid X-Admin-Key header"},
+    },
+)
 async def list_audit(
     request: Request,
     oid_path: str | None = None,
